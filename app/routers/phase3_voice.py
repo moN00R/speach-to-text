@@ -14,7 +14,6 @@ from typing import Optional
 
 from app.config import settings
 from app.utils import validate_audio, save_temp_audio, remove_temp_file
-from app.services import whisper_stt, ollama_llm, piper_tts
 
 router = APIRouter(tags=["Phase 3 – Voice Assistant"])
 
@@ -36,8 +35,8 @@ async def speech_assistant(
 
     try:
         # 1) Speech → Text
-        stt_result = await whisper_stt.transcribe(input_path, language=language)
-        user_text = stt_result["text"]
+        # stt_result = await whisper_stt.transcribe(input_path, language=language)
+        user_text = 'كتير شوب اليوم، نصيحة خليك بالبيت واشرب مي كتير!'  # Mock user text for testing
 
         if not user_text.strip():
             return {"success": False, "error": "No speech detected in the audio."}
@@ -52,7 +51,7 @@ async def speech_assistant(
                 "success": "Not work Now this is Mock response for testing",
                 "user_text": user_text,
                 "assistant_response": answer,
-                "language": stt_result["language"],
+                "language": "ar",  # Mock language for testing
             }
             # await piper_tts.synthesize(answer, output_path)
             # return FileResponse(

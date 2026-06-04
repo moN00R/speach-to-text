@@ -70,7 +70,7 @@ async def speech_assistant(
             "success": True,
             "user_text": user_text,
             "assistant_response": answer,
-            "language": stt_result["language"],
+            "language": 'ar',
         }
 
     except Exception as e:

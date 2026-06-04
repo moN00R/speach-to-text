@@ -36,7 +36,7 @@ async def speech_assistant(
     try:
         # 1) Speech → Text
         # stt_result = await whisper_stt.transcribe(input_path, language=language)
-        user_text = 'كتير شوب اليوم، نصيحة خليك بالبيت واشرب مي كتير!'  # Mock user text for testing
+        user_text = 'شو الطقس اليوم؟'  # Mock user text for testing
 
         if not user_text.strip():
             return {"success": False, "error": "No speech detected in the audio."}
@@ -96,8 +96,8 @@ async def speech_assistant_json(
     output_path = settings.TEMP_AUDIO_DIR / f"response_{audio_id}.wav"
 
     try:
-        stt_result = await whisper_stt.transcribe(input_path, language=language)
-        user_text = stt_result["text"]
+        # stt_result = await whisper_stt.transcribe(input_path, language=language)
+        user_text = 'شو الطقس اليوم؟'  # Mock user text for testing
 
         if not user_text.strip():
             return {"success": False, "error": "No speech detected."}
@@ -110,7 +110,7 @@ async def speech_assistant_json(
             "success": True,
             "user_text": user_text,
             "assistant_response": answer,
-            "language": stt_result["language"],
+            "language": "ar",  # Mock language for testing
             "audio_url": f"/audio/{audio_id}",
         }
     except Exception as e:

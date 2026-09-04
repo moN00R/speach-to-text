@@ -10,6 +10,7 @@ from fastapi import APIRouter, UploadFile, File, Query
 from typing import Optional
 
 from app.utils import validate_audio, save_temp_audio, remove_temp_file
+from app.services import whisper_stt, ollama_llm
 
 router = APIRouter(tags=["Phase 2 – Text Assistant"])
 
@@ -31,8 +32,8 @@ async def assistant(
 
     try:
         # Step 1 – Speech to text
-        # stt_result = await whisper_stt.transcribe(temp_path, language=language)
-        user_text = "كتير شوب اليوم، نصيحة خليك بالبيت واشرب مي كتير!"  # Mock user text for testing
+        stt_result = await whisper_stt.transcribe(temp_path, language=language)
+        user_text = stt_result["text"]
 
         if not user_text.strip():
             return {
@@ -41,14 +42,13 @@ async def assistant(
             }
 
         # Step 2 – LLM response
-        # answer = await ollama_llm.generate(user_text, system_prompt=system_prompt)
-        answer = 'كتير شوب اليوم، نصيحة خليك بالبيت واشرب مي كتير!'  # Mock response for testing
+        answer = await ollama_llm.generate(user_text, system_prompt=system_prompt)
 
         return {
             "success": True,
             "user_text": user_text,
             "assistant_response": answer,
-            "language": "ar",  # Mock language for testing
+            "language": stt_result["language"],
         }
     except Exception as e:
         return {"success": False, "error": str(e)}

@@ -10,10 +10,12 @@ import uuid
 
 from fastapi import APIRouter, UploadFile, File, Query
 from fastapi.responses import FileResponse
+from starlette.background import BackgroundTask
 from typing import Optional
 
 from app.config import settings
 from app.utils import validate_audio, save_temp_audio, remove_temp_file
+from app.services import whisper_stt, ollama_llm, piper_tts
 
 router = APIRouter(tags=["Phase 3 – Voice Assistant"])
 
@@ -35,42 +37,35 @@ async def speech_assistant(
 
     try:
         # 1) Speech → Text
-        # stt_result = await whisper_stt.transcribe(input_path, language=language)
-        user_text = 'شو الطقس اليوم؟'  # Mock user text for testing
+        stt_result = await whisper_stt.transcribe(input_path, language=language)
+        user_text = stt_result["text"]
 
         if not user_text.strip():
             return {"success": False, "error": "No speech detected in the audio."}
 
         # 2) Text → LLM answer
-        # answer = await ollama_llm.generate(user_text, system_prompt=system_prompt)
-        answer = 'كتير شوب اليوم، نصيحة خليك بالبيت واشرب مي كتير!'
+        answer = await ollama_llm.generate(user_text, system_prompt=system_prompt)
 
         # 3) Answer → Speech
         if return_audio:
-            return {
-                "success": "Not work Now this is Mock response for testing",
-                "user_text": user_text,
-                "assistant_response": answer,
-                "language": "ar",  # Mock language for testing
-            }
-            # await piper_tts.synthesize(answer, output_path)
-            # return FileResponse(
-            #     path=str(output_path),
-            #     media_type="audio/wav",
-            #     filename="response.wav",
-            #     headers={
-            #         "X-User-Text": user_text,
-            #         "X-Assistant-Text": answer[:500],  # truncate for header safety
-            #     },
-            #     background=None,  # we clean up below via middleware/event
-            # )
+            await piper_tts.synthesize(answer, output_path)
+            return FileResponse(
+                path=str(output_path),
+                media_type="audio/wav",
+                filename="response.wav",
+                headers={
+                    "X-User-Text": user_text,
+                    "X-Assistant-Text": answer[:500],  # truncate for header safety
+                },
+                background=BackgroundTask(remove_temp_file, output_path),
+            )
 
         # JSON-only mode (useful for debugging or when frontend handles TTS)
         return {
             "success": True,
             "user_text": user_text,
             "assistant_response": answer,
-            "language": 'ar',
+            "language": stt_result["language"],
         }
 
     except Exception as e:
@@ -96,21 +91,20 @@ async def speech_assistant_json(
     output_path = settings.TEMP_AUDIO_DIR / f"response_{audio_id}.wav"
 
     try:
-        # stt_result = await whisper_stt.transcribe(input_path, language=language)
-        user_text = 'شو الطقس اليوم؟'  # Mock user text for testing
+        stt_result = await whisper_stt.transcribe(input_path, language=language)
+        user_text = stt_result["text"]
 
         if not user_text.strip():
             return {"success": False, "error": "No speech detected."}
 
-        # answer = await ollama_llm.generate(user_text, system_prompt=system_prompt)
-        answer = "كتير شوب اليوم، نصيحة خليك بالبيت واشرب مي كتير!"  # Mock response for testing
-        # await piper_tts.synthesize(answer, output_path)
+        answer = await ollama_llm.generate(user_text, system_prompt=system_prompt)
+        await piper_tts.synthesize(answer, output_path)
 
         return {
             "success": True,
             "user_text": user_text,
             "assistant_response": answer,
-            "language": "ar",  # Mock language for testing
+            "language": stt_result["language"],
             "audio_url": f"/audio/{audio_id}",
         }
     except Exception as e:

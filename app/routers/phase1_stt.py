@@ -11,6 +11,7 @@ from fastapi import APIRouter, UploadFile, File, Query
 from typing import Optional
 
 from app.utils import validate_audio, save_temp_audio, remove_temp_file
+from app.services import whisper_stt
 
 
 router = APIRouter(tags=["Phase 1 – Speech To Text"])
@@ -28,22 +29,14 @@ async def voice_recognition(
     temp_path = await save_temp_audio(audio)
 
     try:
-        # result = await whisper_stt.transcribe(temp_path, language=language)
-        result = {
-            "text": "كتير شوب اليوم، نصيحة خليك بالبيت واشرب مي كتير!",
-            "language": "ar",
-            "language_probability": 0.99,
-            "segments": [
-                {"start": 0.0, "end": 5.0, "text": "كتير شوب اليوم، نصيحة خليك بالبيت واشرب مي كتير!"}
-            ],
-        }  # Mock result for testing
-        # return {
-        #     "success": True,
-        #     "text": result["text"],
-        #     "language": result["language"],
-        #     "language_probability": result["language_probability"],
-        #     "segments": result["segments"],
-        # }
+        result = await whisper_stt.transcribe(temp_path, language=language)
+        return {
+            "success": True,
+            "text": result["text"],
+            "language": result["language"],
+            "language_probability": result["language_probability"],
+            "segments": result["segments"],
+        }
     except Exception as e:
         return {"success": False, "error": str(e)}
     finally:
